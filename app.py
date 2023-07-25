@@ -14,9 +14,7 @@ app = Dash(
     __name__,
     external_stylesheets=[dbc.themes.SPACELAB, dbc.icons.FONT_AWESOME],
 )
-
 server = app.server
-
 
 load_figure_template("spacelab")
 

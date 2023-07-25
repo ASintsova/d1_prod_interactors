@@ -1,1 +1,1 @@
-web: gunicorn proteomics:server
+web: gunicorn app:server
