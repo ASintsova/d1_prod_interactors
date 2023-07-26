@@ -37,67 +37,68 @@ testis_data = lfc_data[lfc_data.Tissue == "Testis"]
 
 # Data table
 lfc_data_table = dash_table.DataTable(
-        id='lfc_data_table',
-        # columns=[
-        #     {"name": i, "id": i, "deletable": True, "selectable": True} for i in to_show
-        # ],
-        columns = [
-            dict(id='UniProt', name='UniProt'),
-            dict(id='Gene', name='Gene'),
-            dict(id='Tissue', name='Tissue'),
-            dict(id='Bait', name='Bait'),
-            dict(id='LFC', name='LFC', type='numeric', format=Format(precision=2, scheme=Scheme.fixed)),
-            dict(id='pval', name='pval', type='numeric', format=Format(precision=2, scheme=Scheme.exponent))
-        
+    id='lfc_data_table',
+    # columns=[
+    #     {"name": i, "id": i, "deletable": True, "selectable": True} for i in to_show
+    # ],
+    columns=[
+        dict(id='UniProt', name='UniProt'),
+        dict(id='Gene', name='Gene'),
+        dict(id='Tissue', name='Tissue'),
+        dict(id='Bait', name='Bait'),
+        dict(id='LFC', name='LFC', type='numeric',
+             format=Format(precision=2, scheme=Scheme.fixed)),
+        dict(id='pval', name='pval', type='numeric',
+             format=Format(precision=2, scheme=Scheme.exponent))
+
     ],
-        data=lfc_data.to_dict('records'),
-        editable=False,
-        filter_action="native",
-        sort_action="native",
-        sort_mode="multi",
-        column_selectable="single",
-        
-        selected_columns=[],
-        selected_rows=[],
-        page_action="native",
-        page_current= 0,
-        page_size= 10,
-        style_cell={
-                'overflow': 'hidden',
+    data=lfc_data.to_dict('records'),
+    editable=False,
+    filter_action="native",
+    sort_action="native",
+    sort_mode="multi",
+    column_selectable="single",
+
+    selected_columns=[],
+    selected_rows=[],
+    page_action="native",
+    page_current=0,
+    page_size=10,
+    style_cell={
+        'overflow': 'hidden',
                 'textOverflow': 'ellipsis',
                 'minWidth': '100px', 'width': '120px', 'maxWidth': '120px',
                 'padding': '5px'
     },
-        style_header={
+    style_header={
         'backgroundColor': 'white',
         'fontWeight': 'bold',
-        'fontsize':8,
-        'font-family':'sans-serif'
+        'fontsize': 8,
+        'font-family': 'sans-serif'
     },
-    style_data={'fontsize':6, 'font-family':'sans-serif'},
-    )
+    style_data={'fontsize': 6, 'font-family': 'sans-serif'},
+)
 
 
 intro_card = html.Div(
-    
-        [
-            html.H5("Welcome", className="card-title my-1"),
-            dcc.Markdown("Here you can browse through the data from our most recent study (Chavan, Skrutl et al., 2023). \
+
+    [
+        html.H5("Welcome", className="card-title my-1"),
+        dcc.Markdown("Here you can browse through the data from our most recent study (Chavan, Skrutl et al., 2023). \
                          We performed quantitative MS using 3 baits (D1, Prod and Piwi) to identify putative interactors \
                          (L2FC>1, p<0.05) across Drosophila embryos, ovaries and testes. See the **About** section for more info on how to use this app.",
-                         className="mx-0 my-0"),
-            dbc.Button("Go to the preprint", color="primary", href="https://www.biorxiv.org/content/10.1101/2023.07.11.548599v1", target="_b", 
-                       class_name="p-2 my-0"),
-        ]
-    , className="m-2"
+                     className="mx-0 my-0"),
+        dbc.Button("Go to the preprint", color="primary", href="https://www.biorxiv.org/content/10.1101/2023.07.11.548599v1", target="_b",
+                   class_name="p-2 my-0"),
+    ], className="m-2"
 
 )
 
-footnote_card =  html.Div(
-    
-        [
-            html.H5("About", className="card-title"),
-            dcc.Markdown("""On the left side is a table that allows you to filter hits based on gene, tissue, bait, LFC and p-value. 
+footnote_card = html.Div(
+
+    [
+        html.H5("About", className="card-title"),
+        dcc.Markdown("""On the left side is a table that allows you to filter hits based on gene, tissue, bait, LFC and p-value. 
                          For example, you can type `>1` in the **LFC** column to filter hits that have a log2FC > 1. You can also type `D1` in the **Bait** column 
                          to select for D1-specific interactors, while typing `ne Prod` will selectively exclude Prod-specific interactions. 
                          The filtered results can be submitted to [STRING-db](https://string-db.org/) for functional analyses. 
@@ -105,13 +106,14 @@ footnote_card =  html.Div(
                          the respective UniProt page. All the original pulldown data can be found in Tables S1-3 and Table S6 from the preprint. 
                          Information about DNA repair and transposon repression proteins that were pulled down by D1 or Prod across the different samples can be found in Table S4 and S5 respectively.
 """),
-        
-        ]
-    , className="m-1 mx-0"
+
+    ], className="m-1 mx-0"
 
 )
 
-# Tissue specific 
+# Tissue specific
+
+
 def get_bait_card(tissue_df, tissue):
     bait_selection_card = dbc.RadioItems(
         id=f"{tissue}_bait",
@@ -134,17 +136,20 @@ def get_gene_selection_card(tissue_df, tissue):
 
 
 # Embryo
-volc_graph_embryo = dcc.Graph(id='volc_embryo', className="m-0"), html.Pre(id='embryo_data')
+volc_graph_embryo = dcc.Graph(
+    id='volc_embryo', className="m-0"), html.Pre(id='embryo_data')
 embryo_bait_selection_card = get_bait_card(embryo_data, 'Embryo')
 embryo_gene_selection_card = get_gene_selection_card(embryo_data, 'Embryo')
 
 # Ovary
-volc_graph_ovary = dcc.Graph(id='volc_ovary', className="m-0"), html.Pre(id='ovary_data')
+volc_graph_ovary = dcc.Graph(
+    id='volc_ovary', className="m-0"), html.Pre(id='ovary_data')
 ovary_bait_selection_card = get_bait_card(ovary_data, 'Ovary')
 ovary_gene_selection_card = get_gene_selection_card(ovary_data, 'Ovary')
 
 # Testis
-volc_graph_testis = dcc.Graph(id='volc_testis', className="m-0"), html.Pre(id='testis_data')
+volc_graph_testis = dcc.Graph(
+    id='volc_testis', className="m-0"), html.Pre(id='testis_data')
 testis_bait_selection_card = get_bait_card(testis_data, 'Testis')
 testis_gene_selection_card = get_gene_selection_card(testis_data, 'Testis')
 
@@ -152,7 +157,7 @@ tab1 = dbc.Tab([dbc.Row([dbc.Col(embryo_bait_selection_card, lg=6,
                                  className="pt-2"),
                          dbc.Col(embryo_gene_selection_card, lg=6,
                                  className="pt-2")], className='m-0 p-0'),
-                dbc.Row(volc_graph_embryo, className='m-0 h-100'), 
+                dbc.Row(volc_graph_embryo, className='m-0 h-100'),
                 ],
                tab_id="tab-1",
                label="Embryo",
@@ -164,7 +169,7 @@ tab2 = dbc.Tab([dbc.Row([dbc.Col(ovary_bait_selection_card, lg=6,
                          dbc.Col(ovary_gene_selection_card, lg=6,
                                  className="pt-2")], className='m-0 p-0'),
                 dbc.Row(volc_graph_ovary, className='m-0 h-100'),
-                  ],
+                ],
                tab_id="tab-2",
                label="Ovary",
 
@@ -174,7 +179,7 @@ tab3 = dbc.Tab([dbc.Row([dbc.Col(testis_bait_selection_card, lg=6,
                          dbc.Col(testis_gene_selection_card, lg=6,
                                  className="pt-2")], className='m-0 p-0'),
                 dbc.Row(volc_graph_testis, className='m-0 h-100'),
-                 ],
+                ],
                tab_id="tab-3",
                label="Testis",
 
@@ -183,7 +188,7 @@ tab3 = dbc.Tab([dbc.Row([dbc.Col(testis_bait_selection_card, lg=6,
 
 tabs = dbc.Tabs(
     [tab1,
-         tab2,
+     tab2,
         tab3,
      ],
     id="tabs",
@@ -205,7 +210,8 @@ app.layout = dbc.Container([
         [
             dbc.Col([intro_card, lfc_data_table,
                     html.Div(id="test_mrk"),
-                     dbc.Button('Submit selected genes to STRING-db', id='submit-val', n_clicks=0, color="primary"),
+                     dbc.Button('Submit selected genes to STRING-db',
+                                id='submit-val', n_clicks=0, color="primary"),
                      html.Div(id='string_link')], width=12, lg=6, className="m-0 p-0"),
 
             dbc.Col([tabs],
@@ -223,15 +229,15 @@ app.layout = dbc.Container([
         dbc.Col(
             footnote_card, className="m-3"
         )),
-    
-    ], fluid=True, )
+
+], fluid=True, )
 
 
 def proteomics_volcano(df, gois):
-    df['hits'] = (abs(df.LFC)>1)&(df.pval < 0.05)
+    df['hits'] = (abs(df.LFC) > 1) & (df.pval < 0.05)
     df['colors'] = ['#446e9b' if i else '#999' for i in df.hits.values]
-    text = [f'Gene: {string1}<br>Uniprot: {string2}<br>LFC: {string3}'
-            for string1, string2, string3 in zip(df['Gene'], df['Uniprot.ID'], df['LFC'])]
+    text = [f'Gene: {string1}<br>Uniprot: {string2}<br>LFC: {string3}<br>pval: {string4}'
+            for string1, string2, string3, string4 in zip(df['Gene'], df['Uniprot.ID'], df['LFC'], round(df['pval'], 7))]
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df.LFC, y=df["-log10 (padj)"],
                              hoverinfo='text',
@@ -239,7 +245,7 @@ def proteomics_volcano(df, gois):
                              customdata=df.link,
                              mode='markers',
                              marker=dict(color=df.colors)))
-    
+
     fig.add_hline(y=1.3, fillcolor='grey', line_width=0.5, line_dash="dash")
     fig.add_vline(x=-1, fillcolor='grey', line_width=0.5, line_dash="dash")
     fig.add_vline(x=1, fillcolor='grey', line_width=0.5, line_dash="dash")
@@ -247,9 +253,9 @@ def proteomics_volcano(df, gois):
     if gois:
         gois_df = df[df['Gene'].isin(gois)]
         if not gois_df.empty:
-            text = [f'Gene: {string1}<br>Uniprot: {string2}<br>LFC: {string3}'
-                    for string1, string2, string3 in zip(gois_df['Gene'], 
-                    gois_df['Uniprot.ID'], gois_df['LFC'])]
+            text = [f'Gene: {string1}<br>Uniprot: {string2}<br>LFC: {string3}<br>pval: {string4}'
+                    for string1, string2, string3, string4 in zip(gois_df['Gene'],
+                                                         gois_df['Uniprot.ID'], gois_df['LFC'], gois_df['pval'])]
             fig.add_trace(go.Scatter(x=gois_df.LFC, y=gois_df["-log10 (padj)"],
                                      hoverinfo='text',
                                      text=text,
@@ -257,16 +263,17 @@ def proteomics_volcano(df, gois):
                                      mode='markers',
                                      marker=dict(
                                          color='#d47500',
-                                         size=15,
+                                         size=20,
                                          line=dict(
                                              color='black',
                                              width=1
                                          )
             ),
             ))
-    
-    fig.update_layout(showlegend=False, margin={'t': 0}, xaxis_title='LFC', yaxis_title='-log10 (pval)')
+
+    fig.update_layout(showlegend=False,  xaxis_title='LFC', yaxis_title='-log10 (pval)')
     return fig
+
 
 @app.callback(
     Output('embryo_data', 'children'),
@@ -334,24 +341,20 @@ def update_volcano_testis(embryo_bait, gois):
     return fig
 
 
-
-
-
-
-
 @app.callback(
     Output('test_mrk', 'children'),
     Input('lfc_data_table', "derived_virtual_data"),
-    #prevent_initial_call=True
-) 
+    # prevent_initial_call=True
+)
 def link_to_string(rows):
     df = pd.DataFrame(rows)
     if not df.empty:
         gene_names = df['Gene'].unique()
         uniprot_names = df['Uniprot.ID'].unique()
         return html.Div([dcc.Markdown(f"Number of unique gene names: {len(gene_names)}. Number of unique UNIPROT IDs: {len(uniprot_names)}"
-                                 ), ], className="m-2")
-    return html.Div([dcc.Markdown("No genes selected")]) 
+                                      ), ], className="m-2")
+    return html.Div([dcc.Markdown("No genes selected")])
+
 
 @app.callback(
     Output('string_link', 'children'),
@@ -379,11 +382,12 @@ def link_to_string2(n_clicks, rows):
         }
         network = requests.post(request_url, data=params)
         network_url = network.text.strip()
-        link = html.Div([dcc.Link(
-            f"String link for {len(gene_names)} genes", href=network_url, target="_blank")])
+        link = html.Div([dbc.Button(
+            f"String link for {len(gene_names)} genes", href=network_url, 
+            target="_blank", color="success", class_name="p-2 my-2")])
         sleep(0.5)
     else:
-        link = html.Div([dcc.Markdown("Too many genes")])
+        link = html.Div([dbc.Alert("Too many genes selected", class_name="p-2 my-2 w-50", color="warning")])
     # if st_col.button('Get STRING network'):
     return link
 
