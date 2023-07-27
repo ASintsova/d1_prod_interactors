@@ -10,6 +10,7 @@ from dash_bootstrap_templates import load_figure_template
 import requests
 from dash.dash_table.Format import Format, Scheme
 
+
 app = Dash(
     __name__,
     external_stylesheets=[dbc.themes.SPACELAB, dbc.icons.FONT_AWESOME],
@@ -88,11 +89,15 @@ intro_card = html.Div(
                          We performed quantitative MS using 3 baits (D1, Prod and Piwi) to identify putative interactors \
                          (L2FC>1, p<0.05) across Drosophila embryos, ovaries and testes. See the **About** section for more info on how to use this app.",
                      className="mx-0 my-0"),
+        dbc.Container([
         dbc.Button("Go to the preprint", color="primary", href="https://www.biorxiv.org/content/10.1101/2023.07.11.548599v1", target="_b",
-                   class_name="p-2 my-0"),
+                   class_name="p-2 my-0"), 
+        dbc.Button(html.Span([html.I(className="fab fa-github mx-1"), "View on GitHub"]), color="secondary", href="https://github.com/ASintsova/d1_prod_interactors", target="_b", 
+                   className="p-2 pr-3 mx-4 my-1 ps-2 pe-3", )]),
     ], className="m-2"
 
 )
+
 
 footnote_card = html.Div(
 
@@ -210,7 +215,7 @@ app.layout = dbc.Container([
         [
             dbc.Col([intro_card, lfc_data_table,
                     html.Div(id="test_mrk"),
-                     dbc.Button('Submit selected genes to STRING-db',
+                     dbc.Button('Generate protein-protein interaction network for selected genes via STRING-db',
                                 id='submit-val', n_clicks=0, color="primary"),
                      html.Div(id='string_link')], width=12, lg=6, className="m-0 p-0"),
 
@@ -271,7 +276,11 @@ def proteomics_volcano(df, gois):
             ),
             ))
 
-    fig.update_layout(showlegend=False,  xaxis_title='LFC', yaxis_title='-log10 (pval)')
+    fig.update_layout(showlegend=False,  xaxis_title='LFC', yaxis_title='-log10 (pval)',
+                      height=500,
+                      margin={
+                                        'l': 10, 'b': 0, 't': 20, 'r': 5
+                                    })
     return fig
 
 
@@ -371,8 +380,7 @@ def link_to_string2(n_clicks, rows):
     request_url = "/".join([string_api_url, output_format, method])
     species = 7227
     df = pd.DataFrame(rows)
-    gene_names = df['Gene'].unique()
-    uniprot_names = df['Uniprot.ID'].unique()
+    gene_names = [gene for gene in df['Gene'].unique() if gene]
     if len(gene_names) < 550:
         params = {
             "identifiers": "\r".join(gene_names),  # your protein
@@ -383,7 +391,7 @@ def link_to_string2(n_clicks, rows):
         network = requests.post(request_url, data=params)
         network_url = network.text.strip()
         link = html.Div([dbc.Button(
-            f"String link for {len(gene_names)} genes", href=network_url, 
+            f"View PPI network for {len(gene_names)} genes", href=network_url, 
             target="_blank", color="success", class_name="p-2 my-2")])
         sleep(0.5)
     else:
