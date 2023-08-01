@@ -1,5 +1,5 @@
 from time import sleep
-from dash import Dash, dcc, html, dash_table, Input, Output, State
+from dash import Dash, dcc, html, dash_table, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 import pandas as pd
 import webbrowser
@@ -26,6 +26,8 @@ lfc_data['UniProt'] = (lfc_data["Uniprot.ID"]
                        .str.strip())
 lfc_data['link'] = (lfc_data['UniProt']
                     .apply(lambda x: f'https://www.uniprot.org/uniprotkb/{x}'))
+
+lfc_data['UniProt'] = lfc_data['UniProt'].apply(lambda x: f"[{x}](https://www.uniprot.org/uniprotkb/{x})")
 lfc_data['-log10 (padj)'] = -1 * np.log10(lfc_data['pval'])
 lfc_data = lfc_data.rename(columns={'Gene name': 'Gene'})
 to_show = ['UniProt', 'Gene', 'Tissue', 'Bait', 'LFC', 'pval']
@@ -43,7 +45,7 @@ lfc_data_table = dash_table.DataTable(
     #     {"name": i, "id": i, "deletable": True, "selectable": True} for i in to_show
     # ],
     columns=[
-        dict(id='UniProt', name='UniProt'),
+        dict(id='UniProt', name='UniProt',presentation= 'markdown'),
         dict(id='Gene', name='Gene'),
         dict(id='Tissue', name='Tissue'),
         dict(id='Bait', name='Bait'),
@@ -59,18 +61,19 @@ lfc_data_table = dash_table.DataTable(
     sort_action="native",
     sort_mode="multi",
     column_selectable="single",
-
     selected_columns=[],
     selected_rows=[],
     page_action="native",
     page_current=0,
     page_size=10,
     style_cell={
-        'overflow': 'hidden',
+                'overflow': 'hidden',
                 'textOverflow': 'ellipsis',
                 'minWidth': '100px', 'width': '120px', 'maxWidth': '120px',
-                'padding': '5px'
+                'padding': '5px',
+                
     },
+    style_table={'height': '30vw', 'overflowY': 'auto'},
     style_header={
         'backgroundColor': 'white',
         'fontWeight': 'bold',
@@ -78,6 +81,7 @@ lfc_data_table = dash_table.DataTable(
         'font-family': 'sans-serif'
     },
     style_data={'fontsize': 6, 'font-family': 'sans-serif'},
+    
 )
 
 
@@ -105,10 +109,10 @@ footnote_card = html.Div(
         html.H5("About", className="card-title"),
         dcc.Markdown("""On the left side is a table that allows you to filter hits based on gene, tissue, bait, LFC and p-value. 
                          For example, you can type `>1` in the **LFC** column to filter hits that have a log2FC > 1. You can also type `D1` in the **Bait** column 
-                         to select for D1-specific interactors, while typing `ne Prod` will selectively exclude Prod-specific interactions. 
-                         The filtered results can be submitted to [STRING-db](https://string-db.org/) for functional analyses. 
-                         The right side shows the results as volcano plots across different tissues. Clicking on individual points links out to 
-                         the respective UniProt page. All the original pulldown data can be found in Tables S1-3 and Table S6 from the preprint. 
+                         to select for D1-specific interactors, while typing `ne Prod` will selectively exclude Prod-specific interactions. The UniProt column links each
+                         protein to its respective UniProt page. The filtered results can be submitted to [STRING-db](https://string-db.org/) for functional analyses. 
+                         The right side shows the results as volcano plots across different tissues. Clicking on individual point will show information about this protein
+                         in the table on the left. All the original pulldown data can be found in Tables S1-3 and Table S6 from the preprint. 
                          Information about DNA repair and transposon repression proteins that were pulled down by D1 or Prod across the different samples can be found in Table S4 and S5 respectively.
 """),
 
@@ -215,9 +219,12 @@ app.layout = dbc.Container([
         [
             dbc.Col([intro_card, lfc_data_table,
                     html.Div(id="test_mrk"),
-                     dbc.Button('Generate protein-protein interaction network for selected genes via STRING-db',
-                                id='submit-val', n_clicks=0, color="primary"),
-                     html.Div(id='string_link')], width=12, lg=6, className="m-0 p-0"),
+                    dbc.Container(
+                     [dbc.Button('Generate PPI network for selected genes via STRING-db',
+                                id='submit-val', n_clicks=0, color="primary", className="ms-1 me-3"),
+                                dbc.Button('Clear filters', id='clear-filter', color="secondary",
+                                           className="me-1")]),
+                     html.Div(id='string_link', className="ms-3")], width=12, lg=6, className="m-0 p-0"),
 
             dbc.Col([tabs],
 
@@ -232,7 +239,7 @@ app.layout = dbc.Container([
     ),
     dbc.Row(
         dbc.Col(
-            footnote_card, className="m-3"
+            [footnote_card], className="m-3"
         )),
 
 ], fluid=True, )
@@ -247,7 +254,7 @@ def proteomics_volcano(df, gois):
     fig.add_trace(go.Scatter(x=df.LFC, y=df["-log10 (padj)"],
                              hoverinfo='text',
                              text=text,
-                             customdata=df.link,
+                             customdata=df.UniProt,
                              mode='markers',
                              marker=dict(color=df.colors)))
 
@@ -264,7 +271,7 @@ def proteomics_volcano(df, gois):
             fig.add_trace(go.Scatter(x=gois_df.LFC, y=gois_df["-log10 (padj)"],
                                      hoverinfo='text',
                                      text=text,
-                                     customdata=gois_df.link,
+                                     customdata=gois_df.UniProt,
                                      mode='markers',
                                      marker=dict(
                                          color='#d47500',
@@ -285,13 +292,88 @@ def proteomics_volcano(df, gois):
 
 
 @app.callback(
-    Output('embryo_data', 'children'),
-    Input('volc_embryo', 'clickData'))
-def open_embryo_url(clickData):
-    if clickData:
-        webbrowser.open(clickData["points"][0]["customdata"])
+  [Output("lfc_data_table", "data"),
+   Output("lfc_data_table", "filter_query")],
+  [Input("clear-filter", "n_clicks"),
+   Input("volc_embryo", "clickData"),
+   Input("volc_ovary", "clickData"),
+   Input("volc_testis", "clickData")],
+
+)
+def resetFilter(n_clicks, clickData, clickData_ov, clickData_test):
+    triggered = ctx.triggered_id
+    if triggered == 'clear-filter':
+        return lfc_data.to_dict('records'), ""
+    elif triggered == 'volc_embryo': 
+        filtered = lfc_data[lfc_data['UniProt'] == clickData['points'][0]['customdata']]
+        return filtered.to_dict('records'), ""
+    elif triggered == 'volc_ovary':
+        filtered = lfc_data[lfc_data['UniProt'] == clickData_ov['points'][0]['customdata']]
+        return filtered.to_dict('records'), ""
+    elif triggered == 'volc_testis':
+        filtered = lfc_data[lfc_data['UniProt'] == clickData_test['points'][0]['customdata']]
+        return filtered.to_dict('records'), ""
     else:
         raise PreventUpdate
+      
+
+
+
+# @app.callback(
+#     Output("lfc_data_table", "data"),
+#     Input("volc_embryo", "clickData"),
+#     prevent_initial_call=True,
+# )
+# def verify(clickData):
+#     if clickData:
+#         print("Verify triggered")
+#         # those are the rownumbers in users_to_verify 
+#         # if users_to_verify is not dynamic, just filter
+#         # it by row number and grab user_ids or other cols
+#         filtered = lfc_data[lfc_data['UniProt'] == clickData['points'][0]['customdata']]
+#         print(filtered.index)
+#         print(filtered.to_dict('records'))
+#         return filtered.to_dict('records')
+
+#     else:
+#         return lfc_data.to_dict('records')
+
+    
+
+
+# @app.callback(
+#     [Output("lfc_data_table", "data")],
+#     [Input("volc_embryo", "clickData")]
+# )
+# def on_trace_click(clickData):
+#     """Listen to click events and update table, passing filtered rows"""
+#     if clickData:
+#         p = clickData["points"][0]
+
+#         # here, use 'customdata' property of clicked point, 
+#         # could also use 'curveNumber', 'pointIndex', etc.
+#         if 'customdata' in p:
+#             key = p['customdata']
+#         df_f = get_corresponding_rows(lfc_data, key)
+#         return df_f.to_dict('records')
+#     else:
+#         raise PreventUpdate
+
+# def get_corresponding_rows(df, my_key):
+#     """Filter df, return rows that match my_key"""
+#     return df[df['UniProt'] == my_key]
+#return filtered_df.sort_values(by=['lastUpdated']).to_dict('records'), [row_id]
+
+
+
+# @app.callback(
+#     Output('embryo_data', 'children'),
+#     Input('volc_embryo', 'clickData'))
+# def open_embryo_url(clickData):
+#     if clickData:
+#         webbrowser.open(clickData["points"][0]["customdata"])
+#     else:
+#         raise PreventUpdate
 
 
 @app.callback(
